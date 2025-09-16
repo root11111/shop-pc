@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>调试用户信息</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>调试用户信息</h1>
+    <button onclick="testUserInfo()">测试用户信息API</button>
+    <button onclick="testSysInfo()">测试系统信息API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testUserInfo() {
+            try {
+                const token = localStorage.getItem('ukey');
+                console.log('Token:', token);
+                
+                if (!token) {
+                    document.getElementById('result').innerHTML = '<p style="color: red;">请先登录</p>';
+                    return;
+                }
+
+                const response = await axios.get('http://localhost:8080/front/account/user/info', {
+                    params: {
+                        access_token: token
+                    }
+                });
+
+                console.log('用户信息API响应:', response);
+                document.getElementById('result').innerHTML = '<h3>用户信息API响应:</h3><pre>' + JSON.stringify(response.data, null, 2) + '</pre>';
+            } catch (error) {
+                console.error('用户信息API调用失败:', error);
+                document.getElementById('result').innerHTML = '<p style="color: red;">用户信息API调用失败: ' + error.message + '</p>';
+            }
+        }
+
+        async function testSysInfo() {
+            try {
+                const response = await axios.get('http://localhost:8080/front/sys/config/info');
+
+                console.log('系统信息API响应:', response);
+                document.getElementById('result').innerHTML = '<h3>系统信息API响应:</h3><pre>' + JSON.stringify(response.data, null, 2) + '</pre>';
+            } catch (error) {
+                console.error('系统信息API调用失败:', error);
+                document.getElementById('result').innerHTML = '<p style="color: red;">系统信息API调用失败: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
