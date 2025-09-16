@@ -2,33 +2,44 @@
   <div class="products-page">
     <!-- 背景装饰 -->
     <div class="page-background">
+      <div class="bg-gradient"></div>
       <div class="bg-shape shape-1"></div>
       <div class="bg-shape shape-2"></div>
       <div class="bg-shape shape-3"></div>
+      <div class="floating-elements">
+        <div class="floating-circle circle-1"></div>
+        <div class="floating-circle circle-2"></div>
+        <div class="floating-circle circle-3"></div>
+      </div>
     </div>
     
     <div class="container">
-      <!-- 页面标题 -->
-      <div class="page-header">
+      <!-- 页面标题和筛选条件 -->
+      <div class="page-header-card">
+        <div class="card-glow"></div>
         <div class="header-content">
-          <h1 class="page-title">
-            <span class="title-text">商品列表</span>
-            <span class="title-decoration"></span>
-          </h1>
-        </div>
-      </div>
-
-      <!-- 筛选和排序 -->
-      <div class="filters-section">
-        <div class="filters-header">
-          <h3 class="filters-title">
-            <el-icon><Filter /></el-icon>
-            筛选条件
-          </h3>
-          <div class="filters-count">
-            共找到 <span class="highlight">{{ pagination.total }}</span> 件商品
+          <div class="title-section">
+            <div class="title-wrapper">
+              <h1 class="page-title">
+                <span class="title-icon">
+                  <el-icon><Grid /></el-icon>
+                </span>
+                <span class="title-text">商品列表</span>
+                <span class="title-decoration"></span>
+              </h1>
+            </div>
+            <div class="products-count">
+              <div class="count-icon">
+                <el-icon><Box /></el-icon>
+              </div>
+              <div class="count-text">
+                <span class="count-number">{{ pagination.total }}</span>
+                <span class="count-label">件商品</span>
+              </div>
+            </div>
           </div>
-        </div>
+          
+          <div class="filters-section">
         
         <div class="filters-row">
           <div class="filter-group">
@@ -101,6 +112,8 @@
             </el-button>
           </div>
         </div>
+          </div>
+        </div>
       </div>
 
       <!-- 商品网格 -->
@@ -141,17 +154,30 @@
           >
             <div class="product-image">
               <img :src="product.image" :alt="product.name" />
-              <div class="product-badge" v-if="product.isNew">新品</div>
+              <div class="product-badge" v-if="product.isNew">
+                <span class="badge-text">新品</span>
+              </div>
               <div class="product-overlay">
-                <el-button 
-                  type="primary" 
-                  size="small"
-                  @click.stop="goToProductDetail(product.id)"
-                  class="quick-view-btn"
-                >
-                  <el-icon><View /></el-icon>
-                  快速查看
-                </el-button>
+                <div class="overlay-actions">
+                  <el-button 
+                    type="primary" 
+                    size="small"
+                    @click.stop="goToProductDetail(product.id)"
+                    class="quick-view-btn"
+                    circle
+                  >
+                    <el-icon><View /></el-icon>
+                  </el-button>
+                  <el-button 
+                    type="success" 
+                    size="small"
+                    @click.stop="addToCart(product)"
+                    class="add-cart-btn"
+                    circle
+                  >
+                    <el-icon><ShoppingCart /></el-icon>
+                  </el-button>
+                </div>
               </div>
             </div>
             
@@ -231,7 +257,7 @@ import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
 import { 
   Filter, Grid, Money, Sort, Refresh, 
-  List, View, ShoppingCart, Star, StarFilled 
+  List, View, ShoppingCart, Star, StarFilled, Box 
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -610,7 +636,7 @@ watch(() => filters, () => {
 .products-page {
   padding: 20px 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
   position: relative;
   overflow: hidden;
 }
@@ -625,11 +651,64 @@ watch(() => filters, () => {
   z-index: 0;
 }
 
+.bg-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 80%, rgba(108, 117, 125, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(73, 80, 87, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(52, 58, 64, 0.03) 0%, transparent 50%);
+  animation: gradientShift 20s ease-in-out infinite;
+}
+
+.floating-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.floating-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  animation: float 25s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 200px;
+  height: 200px;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 150px;
+  height: 150px;
+  top: 60%;
+  right: 15%;
+  animation-delay: -7s;
+}
+
+.circle-3 {
+  width: 100px;
+  height: 100px;
+  bottom: 20%;
+  left: 20%;
+  animation-delay: -14s;
+}
+
 .bg-shape {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  animation: float 6s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
+  animation: float 8s ease-in-out infinite;
 }
 
 .shape-1 {
@@ -665,20 +744,123 @@ watch(() => filters, () => {
   }
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: 50px;
+@keyframes gradientShift {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(180deg);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.page-header-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   position: relative;
   z-index: 2;
+  overflow: hidden;
+}
+
+.card-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+  animation: glow 8s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .header-content {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+
+.products-count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.count-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+}
+
+.count-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.count-number {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #667eea;
+  line-height: 1;
+}
+
+.count-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
 }
 
 .page-title {
@@ -740,40 +922,15 @@ watch(() => filters, () => {
 }
 
 .filters-section {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  padding: 30px;
-  border-radius: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  position: relative;
-  z-index: 2;
+  background: rgba(248, 249, 250, 0.9);
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
 }
 
-.filters-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
 
-.filters-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0;
-}
 
-.filters-count {
-  color: #6c757d;
-  font-size: 0.95rem;
-}
 
 .highlight {
   color: #667eea;
@@ -782,7 +939,7 @@ watch(() => filters, () => {
 
 .filters-row {
   display: flex;
-  gap: 24px;
+  gap: 20px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -790,17 +947,18 @@ watch(() => filters, () => {
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 200px;
+  gap: 6px;
+  min-width: 160px;
+  flex: 1;
 }
 
 .filter-label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-weight: 600;
   color: #495057;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   margin: 0;
 }
 
@@ -812,6 +970,8 @@ watch(() => filters, () => {
   display: flex;
   align-items: end;
   margin-left: auto;
+  flex-shrink: 0;
+  gap: 10px;
 }
 
 .reset-btn {
@@ -908,9 +1068,9 @@ watch(() => filters, () => {
 }
 
 .product-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  border-color: rgba(64, 158, 255, 0.2);
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  border-color: rgba(102, 126, 234, 0.3);
 }
 
 .product-card:hover::before {
@@ -934,13 +1094,20 @@ watch(() => filters, () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 3;
+  backdrop-filter: blur(5px);
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .product-card:hover .product-overlay {
@@ -952,15 +1119,41 @@ watch(() => filters, () => {
   border: none;
   color: white;
   font-weight: 600;
-  border-radius: 8px;
-  padding: 12px 20px;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
   transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .quick-view-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+}
+
+.add-cart-btn {
+  background: linear-gradient(135deg, #2ed573 0%, #1e90ff 100%);
+  border: none;
+  color: white;
+  font-weight: 600;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-cart-btn:hover {
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 10px 30px rgba(46, 213, 115, 0.5);
 }
 
 .product-image::before {
@@ -995,19 +1188,25 @@ watch(() => filters, () => {
 
 .product-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 16px;
+  right: 16px;
   background: linear-gradient(135deg, #ff4757 0%, #ff3742 100%);
   color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 11px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
   z-index: 3;
   animation: pulse 2s infinite;
+  backdrop-filter: blur(10px);
+}
+
+.badge-text {
+  display: block;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes pulse {

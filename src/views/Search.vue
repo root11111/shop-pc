@@ -1,25 +1,14 @@
 <template>
   <div class="search-page">
     <div class="container">
-      <!-- 搜索框 -->
-      <div class="search-header">
-        <div class="search-box">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="搜索商品..."
-            size="large"
-            @keyup.enter="handleSearch"
-            clearable
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-          <el-button type="primary" size="large" @click="handleSearch">
-            搜索
-          </el-button>
+      <!-- 搜索提示和标签 -->
+      <div class="search-header" v-if="!hasSearched">
+        <!-- 搜索提示 -->
+        <div class="search-tips">
+          <span class="tip-text">💡 支持搜索商品名称、商品ID，输入数字将按商品ID搜索</span>
         </div>
         
+        <!-- 搜索历史 -->
         <div class="search-tags" v-if="searchHistory.length > 0">
           <span class="tags-label">搜索历史：</span>
           <el-tag
@@ -33,6 +22,19 @@
             {{ tag }}
           </el-tag>
         </div>
+        
+        <!-- 热门搜索 -->
+        <div class="search-tags" v-if="hotKeywords.length > 0">
+          <span class="tags-label">热门搜索：</span>
+          <el-tag
+            v-for="tag in hotKeywords"
+            :key="tag"
+            class="search-tag hot-tag"
+            @click="searchByTag(tag)"
+          >
+            {{ tag }}
+          </el-tag>
+        </div>
       </div>
 
       <!-- 搜索结果 -->
@@ -41,6 +43,15 @@
           <div class="results-info">
             <span>找到 <strong>{{ totalResults }}</strong> 个相关商品</span>
             <span class="search-keyword">"{{ searchKeyword }}"</span>
+            <el-button 
+              type="text" 
+              @click="handleClear" 
+              class="clear-search-btn"
+              size="small"
+            >
+              <el-icon><Close /></el-icon>
+              清除搜索
+            </el-button>
           </div>
           
           <div class="sort-options">
@@ -164,12 +175,16 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Close } from '@element-plus/icons-vue'
 import { useCartStore } from '@/stores/cart'
+import { useUserStore } from '@/stores/user'
+import { getSearchInfo, searchProducts } from '@/api/search'
+import { addToFavorites, removeFromFavorites } from '@/api/favorites'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const userStore = useUserStore()
 
 const searchKeyword = ref('')
 const hasSearched = ref(false)
@@ -180,43 +195,139 @@ const currentPage = ref(1)
 const pageSize = ref(12)
 const totalResults = ref(0)
 
-const searchHistory = ref(['iPhone', 'MacBook', 'Nike', '运动鞋'])
+// 搜索相关数据
+const searchHistory = ref([])
+const hotKeywords = ref([])
+const suggestKeyword = ref('')
 const searchResults = ref([])
 
-// 模拟推荐商品
-const recommendedProducts = ref([
-  {
-    id: 1,
-    name: 'iPhone 15 Pro',
-    description: '最新款iPhone，性能强劲',
-    price: 7999,
-    originalPrice: 8999,
-    image: 'https://via.placeholder.com/300x300?text=iPhone+15+Pro'
-  },
-  {
-    id: 2,
-    name: 'MacBook Air M2',
-    description: '轻薄便携，性能卓越',
-    price: 8999,
-    originalPrice: 9999,
-    image: 'https://via.placeholder.com/300x300?text=MacBook+Air+M2'
-  },
-  {
-    id: 3,
-    name: 'Nike Air Max',
-    description: '舒适运动鞋，时尚百搭',
-    price: 599,
-    originalPrice: 699,
-    image: 'https://via.placeholder.com/300x300?text=Nike+Air+Max'
-  },
-  {
-    id: 4,
-    name: '无印良品收纳盒',
-    description: '简约设计，实用收纳',
-    price: 89,
-    image: 'https://via.placeholder.com/300x300?text=收纳盒'
+// 推荐商品
+const recommendedProducts = ref([])
+
+// 加载推荐商品
+const loadRecommendedProducts = async () => {
+  try {
+    console.log('开始获取推荐商品...')
+    
+    // 构建API请求参数（不传搜索参数，获取推荐商品）
+    const params = {
+      page: 1,
+      limit: 8  // 获取8个推荐商品
+    }
+    
+    // 添加用户会员类型参数
+    if (userStore.userInfo && userStore.userInfo.user_level_id) {
+      params.user_level_id = userStore.userInfo.user_level_id
+    }
+    
+    // 按销量排序获取热门商品作为推荐
+    params.orderby = 1 // 按销量排序
+    params.sort = 2    // 降序
+    
+    console.log('推荐商品API请求参数:', params)
+    const response = await searchProducts(params)
+    console.log('推荐商品API响应:', response)
+    
+    // 处理推荐商品数据
+    let productData = null
+    if (response && response.code === 0) {
+      if (response.data && response.data.records && Array.isArray(response.data.records)) {
+        productData = response.data.records
+      } else if (response.data && Array.isArray(response.data)) {
+        productData = response.data
+      } else if (response.records && Array.isArray(response.records)) {
+        productData = response.records
+      } else {
+        console.log('推荐商品响应数据结构:', response)
+        // 尝试查找可能的数组字段
+        const possibleFields = ['records', 'data', 'items', 'list']
+        for (const field of possibleFields) {
+          if (response[field] && Array.isArray(response[field])) {
+            productData = response[field]
+            break
+          }
+        }
+        if (!productData && response.data && typeof response.data === 'object') {
+          for (const field of possibleFields) {
+            if (response.data[field] && Array.isArray(response.data[field])) {
+              productData = response.data[field]
+              break
+            }
+          }
+        }
+      }
+    } else if (Array.isArray(response)) {
+      productData = response
+    }
+    
+    if (productData && Array.isArray(productData)) {
+      // 映射推荐商品数据格式
+      recommendedProducts.value = productData.map(item => {
+        return {
+          id: item.item_id || item.id,
+          name: item.item_name || item.name || item.product_name || '商品名称',
+          description: item.item_desc || item.description || item.product_desc || '商品描述',
+          price: item.sale_price || item.price || item.item_unit_price || 0,
+          originalPrice: item.market_price || item.original_price || item.product_unit_price_max,
+          image: item.item_image || item.image || item.product_image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2dyYWRpZW50KSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2NjdlZWE7c3RvcC1vcGFjaXR5OjEiIC8+CjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6Izc2NGJhMjtzdG9wLW9wYWNpdHk6MSIgLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8dGV4dCB4PSIxNTAiIHk9IjE1MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWbveWbvSXkuK3mlrDlpKfmlrDvvIzlj6/ku6XkuI3kuIDkuK3kuI3kuIDkuK08L3RleHQ+Cjwvc3ZnPg==',
+          rating: item.rating || 4.5,
+          reviewCount: item.review_count || item.sales_count || 0,
+          isNew: item.is_new || false,
+          isFavorite: item.is_favorite || false
+        }
+      })
+      
+      console.log('推荐商品加载成功:', recommendedProducts.value)
+    } else {
+      console.log('没有找到推荐商品数据')
+      recommendedProducts.value = []
+    }
+    
+  } catch (error) {
+    console.error('获取推荐商品失败:', error)
+    recommendedProducts.value = []
   }
-])
+}
+
+// 加载搜索信息
+const loadSearchInfo = async () => {
+  try {
+    console.log('开始获取搜索信息...')
+    const response = await getSearchInfo()
+    console.log('搜索信息API响应:', response)
+    
+    if (response && response.code === 0) {
+      const data = response.data
+      // 设置热门搜索词
+      if (data.search_hot_words && Array.isArray(data.search_hot_words)) {
+        hotKeywords.value = data.search_hot_words
+      }
+      
+      // 设置搜索历史
+      if (data.search_history_words && Array.isArray(data.search_history_words)) {
+        searchHistory.value = data.search_history_words
+      }
+      
+      // 设置建议搜索词
+      if (data.suggest_search_words && data.suggest_search_words.default_search_words) {
+        suggestKeyword.value = data.suggest_search_words.default_search_words
+      }
+      
+      console.log('搜索信息加载成功:', {
+        hotKeywords: hotKeywords.value,
+        searchHistory: searchHistory.value,
+        suggestKeyword: suggestKeyword.value
+      })
+    } else {
+      console.error('搜索信息获取失败:', response)
+    }
+  } catch (error) {
+    console.error('获取搜索信息失败:', error)
+    // 设置默认值
+    hotKeywords.value = ['手机', '电脑', '服装', '运动鞋', '化妆品']
+    suggestKeyword.value = '搜索商品'
+  }
+}
 
 // 模拟搜索结果
 const mockSearchResults = [
@@ -257,7 +368,6 @@ const mockSearchResults = [
 
 const handleSearch = () => {
   if (!searchKeyword.value.trim()) {
-    ElMessage.warning('请输入搜索关键词')
     return
   }
   
@@ -272,9 +382,18 @@ const handleSearch = () => {
   performSearch()
 }
 
+// 清除搜索内容
+const handleClear = () => {
+  // 直接跳转到商品列表页面
+  router.push('/products')
+}
+
 const searchByTag = (tag) => {
-  searchKeyword.value = tag
-  performSearch()
+  // 跳转到搜索页面并传递搜索关键词
+  router.push({
+    name: 'Search',
+    query: { q: tag }
+  })
 }
 
 const removeSearchHistory = (tag) => {
@@ -289,36 +408,130 @@ const performSearch = async () => {
   hasSearched.value = true
   
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
+    console.log('开始搜索商品:', searchKeyword.value)
     
-    // 模拟搜索结果
-    let results = [...mockSearchResults]
-    
-    // 应用排序
-    switch (sortBy.value) {
-      case 'price_asc':
-        results.sort((a, b) => a.price - b.price)
-        break
-      case 'price_desc':
-        results.sort((a, b) => b.price - a.price)
-        break
-      case 'sales':
-        results.sort((a, b) => b.rating - a.rating)
-        break
-      case 'newest':
-        results.sort((a, b) => b.isNew - a.isNew)
-        break
+    // 构建搜索参数
+    const searchTerm = searchKeyword.value.trim()
+    const params = {
+      page: currentPage.value,
+      limit: pageSize.value
     }
     
-    // 分页
-    const start = (currentPage.value - 1) * pageSize.value
-    const end = start + pageSize.value
-    searchResults.value = results.slice(start, end)
-    totalResults.value = results.length
+    // 设置搜索参数
+    if (searchTerm) {
+      // 如果搜索词是纯数字，只按商品ID搜索
+      if (/^\d+$/.test(searchTerm)) {
+        params.productId = parseInt(searchTerm)
+        console.log('搜索词为纯数字，按商品ID搜索:', searchTerm)
+      } else {
+        // 非纯数字，按商品名称和关键词搜索
+        params.keywords = searchTerm  // 关键词搜索（主要搜索方式）
+        params.productName = searchTerm  // 商品名称搜索
+        console.log('搜索词为文字，按商品名称和关键词搜索:', searchTerm)
+      }
+      
+      console.log('搜索参数:', params)
+    }
+    
+    // 添加用户会员类型参数
+    if (userStore.userInfo && userStore.userInfo.user_level_id) {
+      params.user_level_id = userStore.userInfo.user_level_id
+    }
+    
+    // 添加排序参数
+    switch (sortBy.value) {
+      case 'price_asc':
+        params.orderby = 3 // 按价格排序
+        params.sort = 1    // 升序
+        break
+      case 'price_desc':
+        params.orderby = 3 // 按价格排序
+        params.sort = 2    // 降序
+        break
+      case 'sales':
+        params.orderby = 1 // 按销量排序
+        params.sort = 2    // 降序
+        break
+      case 'newest':
+        params.orderby = 2 // 按添加时间排序
+        params.sort = 2    // 降序
+        break
+      default:
+        params.orderby = 1 // 默认按销量排序
+        params.sort = 2    // 降序
+    }
+    
+    console.log('搜索API请求参数:', params)
+    const response = await searchProducts(params)
+    console.log('搜索API响应:', response)
+    
+    // 处理搜索结果
+    let productData = null
+    if (response && response.code === 0) {
+      if (response.data && response.data.records && Array.isArray(response.data.records)) {
+        productData = response.data.records
+        totalResults.value = response.data.total || 0
+      } else if (response.data && Array.isArray(response.data)) {
+        productData = response.data
+        totalResults.value = response.total || 0
+      } else if (response.records && Array.isArray(response.records)) {
+        productData = response.records
+        totalResults.value = response.total || 0
+      } else {
+        console.log('搜索响应数据结构:', response)
+        // 尝试查找可能的数组字段
+        const possibleFields = ['records', 'data', 'items', 'list']
+        for (const field of possibleFields) {
+          if (response[field] && Array.isArray(response[field])) {
+            productData = response[field]
+            totalResults.value = response.total || 0
+            break
+          }
+        }
+        if (!productData && response.data && typeof response.data === 'object') {
+          for (const field of possibleFields) {
+            if (response.data[field] && Array.isArray(response.data[field])) {
+              productData = response.data[field]
+              totalResults.value = response.data.total || 0
+              break
+            }
+          }
+        }
+      }
+    } else if (Array.isArray(response)) {
+      productData = response
+      totalResults.value = response.length
+    }
+    
+    if (productData && Array.isArray(productData)) {
+      // 映射搜索结果数据格式
+      searchResults.value = productData.map(item => {
+        return {
+          id: item.item_id || item.id,
+          name: item.item_name || item.name || item.product_name || '商品名称',
+          description: item.item_desc || item.description || item.product_desc || '商品描述',
+          price: item.sale_price || item.price || item.item_unit_price || 0,
+          originalPrice: item.market_price || item.original_price || item.product_unit_price_max,
+          image: item.item_image || item.image || item.product_image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2dyYWRpZW50KSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2NjdlZWE7c3RvcC1vcGFjaXR5OjEiIC8+CjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6Izc2NGJhMjtzdG9wLW9wYWNpdHk6MSIgLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8dGV4dCB4PSIxNTAiIHk9IjE1MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWbveWbvSXkuK3mlrDlpKfmlrDvvIzlj6/ku6XkuI3kuIDkuK3kuI3kuIDkuK08L3RleHQ+Cjwvc3ZnPg==',
+          rating: item.rating || 4.5,
+          reviewCount: item.review_count || item.sales_count || 0,
+          isNew: item.is_new || false,
+          isFavorite: item.is_favorite || false
+        }
+      })
+      
+      console.log('搜索结果加载成功:', searchResults.value)
+    } else {
+      searchResults.value = []
+      totalResults.value = 0
+      console.log('没有找到搜索结果')
+    }
     
   } catch (error) {
+    console.error('搜索失败:', error)
     ElMessage.error('搜索失败，请重试')
+    searchResults.value = []
+    totalResults.value = 0
   } finally {
     loading.value = false
   }
@@ -357,9 +570,37 @@ const addToCart = async (product) => {
   }
 }
 
-const toggleFavorite = (product) => {
-  product.isFavorite = !product.isFavorite
-  ElMessage.success(product.isFavorite ? '已添加到收藏' : '已取消收藏')
+const toggleFavorite = async (product) => {
+  try {
+    if (product.isFavorite) {
+      // 取消收藏
+      console.log('开始取消收藏商品:', product.id)
+      const response = await removeFromFavorites(product.id)
+      console.log('取消收藏API响应:', response)
+      
+      if (response && response.code === 0) {
+        product.isFavorite = false
+        ElMessage.success('已取消收藏')
+      } else {
+        ElMessage.error(response?.msg || '取消收藏失败')
+      }
+    } else {
+      // 添加收藏
+      console.log('开始添加收藏商品:', product.id)
+      const response = await addToFavorites(product.id)
+      console.log('添加收藏API响应:', response)
+      
+      if (response && response.code === 0) {
+        product.isFavorite = true
+        ElMessage.success('已添加到收藏')
+      } else {
+        ElMessage.error(response?.msg || '添加收藏失败')
+      }
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+    ElMessage.error('收藏操作失败')
+  }
 }
 
 const goToProducts = () => {
@@ -374,11 +615,17 @@ watch(() => route.query.q, (newQuery) => {
   }
 }, { immediate: true })
 
-onMounted(() => {
+onMounted(async () => {
+  // 加载搜索信息（热门搜索词、搜索历史等）
+  await loadSearchInfo()
+  
   // 从URL参数获取搜索关键词
   if (route.query.q) {
     searchKeyword.value = route.query.q
     handleSearch()
+  } else {
+    // 如果没有搜索关键词，加载推荐商品
+    await loadRecommendedProducts()
   }
 })
 </script>
@@ -413,6 +660,20 @@ onMounted(() => {
   padding: 0 24px;
 }
 
+.search-tips {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tip-text {
+  color: #666;
+  font-size: 14px;
+  background: #f8f9fa;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
 .search-tags {
   display: flex;
   align-items: center;
@@ -432,6 +693,17 @@ onMounted(() => {
 
 .search-tag:hover {
   background: #409eff;
+  color: white;
+}
+
+.hot-tag {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+}
+
+.hot-tag:hover {
+  background: #ff5252;
   color: white;
 }
 
@@ -461,6 +733,16 @@ onMounted(() => {
 .search-keyword {
   color: #409eff;
   font-weight: 500;
+}
+
+.clear-search-btn {
+  margin-left: 12px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.clear-search-btn:hover {
+  color: #409eff;
 }
 
 .products-grid {

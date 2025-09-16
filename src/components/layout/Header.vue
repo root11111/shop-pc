@@ -12,12 +12,14 @@
 
         <!-- 搜索框 -->
         <div class="search-box">
-          <el-input
-            v-model="searchKeyword"
-            :placeholder="$t('common.search') + '...'"
-            class="search-input"
-            @keyup.enter="handleSearch"
-          >
+        <el-input
+          v-model="searchKeyword"
+          :placeholder="$t('common.search') + '商品名称或商品ID...'"
+          class="search-input"
+          @keyup.enter="handleSearch"
+          @clear="handleClear"
+          clearable
+        >
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
@@ -90,6 +92,7 @@ import { useSettingsStore } from '../../stores/settings'
 import { Search, ShoppingCart, ArrowDown, Grid } from '@element-plus/icons-vue'
 import LanguageSwitcher from '../LanguageSwitcher.vue'
 import request from '../../api/request'
+import { getSearchInfo } from '../../api/search'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -120,6 +123,12 @@ const handleSearch = () => {
       query: { q: searchKeyword.value.trim() }
     })
   }
+}
+
+// 清除搜索内容
+const handleClear = () => {
+  searchKeyword.value = ''
+  console.log('Header搜索内容已清除')
 }
 
 const goToCart = () => {
