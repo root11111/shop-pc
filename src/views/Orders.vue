@@ -1,5 +1,18 @@
 <template>
   <div class="orders-page">
+    <!-- 背景装饰 -->
+    <div class="page-background">
+      <div class="bg-gradient"></div>
+      <div class="bg-shape shape-1"></div>
+      <div class="bg-shape shape-2"></div>
+      <div class="bg-shape shape-3"></div>
+      <div class="floating-elements">
+        <div class="floating-circle circle-1"></div>
+        <div class="floating-circle circle-2"></div>
+        <div class="floating-circle circle-3"></div>
+      </div>
+    </div>
+    
     <div class="container">
       <div class="page-header">
         <h1>我的订单</h1>
@@ -10,13 +23,13 @@
         <!-- 订单状态筛选 -->
         <div class="order-filters">
           <el-tabs v-model="activeStatus" @tab-change="handleStatusChange">
-            <el-tab-pane label="全部" name="all" />
-            <el-tab-pane label="待付款" name="pending" />
-            <el-tab-pane label="待配货" name="picking" />
-            <el-tab-pane label="待发货" name="shipping" />
-            <el-tab-pane label="待收货" name="shipped" />
-            <el-tab-pane label="已完成" name="completed" />
-            <el-tab-pane label="已取消" name="cancelled" />
+            <el-tab-pane :label="`全部(${orderStats.all})`" name="all" />
+            <el-tab-pane :label="`待付款(${orderStats.pending})`" name="pending" />
+            <el-tab-pane :label="`待配货(${orderStats.picking})`" name="picking" />
+            <el-tab-pane :label="`待发货(${orderStats.shipping})`" name="shipping" />
+            <el-tab-pane :label="`待收货(${orderStats.shipped})`" name="shipped" />
+            <el-tab-pane :label="`已完成(${orderStats.completed})`" name="completed" />
+            <el-tab-pane :label="`已取消(${orderStats.cancelled})`" name="cancelled" />
           </el-tabs>
         </div>
 
@@ -141,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Picture } from '@element-plus/icons-vue'
@@ -154,6 +167,18 @@ const activeStatus = ref('all')
 
 // 订单数据
 const orders = ref([])
+
+// 订单状态统计
+const orderStats = reactive({
+  all: 0,
+  pending: 0,
+  picking: 0,
+  shipping: 0,
+  shipped: 0,
+  completed: 0,
+  cancelled: 0
+})
+
 
 const filteredOrders = computed(() => {
   if (activeStatus.value === 'all') {
@@ -317,7 +342,45 @@ const goToProducts = () => {
   router.push('/products')
 }
 
+// 更新订单状态统计
+const updateOrderStats = () => {
+  // 重置统计
+  orderStats.all = orders.value.length
+  orderStats.pending = 0
+  orderStats.picking = 0
+  orderStats.shipping = 0
+  orderStats.shipped = 0
+  orderStats.completed = 0
+  orderStats.cancelled = 0
+  
+  // 统计各状态订单数量
+  orders.value.forEach(order => {
+    const status = getOrderStatus(order)
+    switch (status) {
+      case 'pending':
+        orderStats.pending++
+        break
+      case 'picking':
+        orderStats.picking++
+        break
+      case 'shipping':
+        orderStats.shipping++
+        break
+      case 'shipped':
+        orderStats.shipped++
+        break
+      case 'completed':
+        orderStats.completed++
+        break
+      case 'cancelled':
+        orderStats.cancelled++
+        break
+    }
+  })
+}
+
 // 加载订单数据
+
 const loadOrders = async () => {
   loading.value = true
   try {
@@ -356,6 +419,9 @@ const loadOrders = async () => {
           orders.value.push(order)
         }
       }
+      
+      // 更新订单状态统计
+      updateOrderStats()
     } else {
       console.error('获取订单列表失败:', response?.msg || '未知错误')
       ElMessage.error(response?.msg || '获取订单列表失败')
@@ -377,7 +443,126 @@ onMounted(() => {
 .orders-page {
   padding: 20px 0;
   min-height: 100vh;
-  background: #f5f5f5;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 30%, #d1e7ff 70%, #b8daff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 80%, rgba(64, 158, 255, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(24, 144, 255, 0.06) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(135, 208, 104, 0.04) 0%, transparent 50%);
+  animation: gradientShift 20s ease-in-out infinite;
+}
+
+.floating-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.floating-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(64, 158, 255, 0.1);
+  backdrop-filter: blur(10px);
+  animation: float 25s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 200px;
+  height: 200px;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 150px;
+  height: 150px;
+  top: 60%;
+  right: 15%;
+  animation-delay: -7s;
+}
+
+.circle-3 {
+  width: 100px;
+  height: 100px;
+  bottom: 20%;
+  left: 20%;
+  animation-delay: -14s;
+}
+
+.bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(24, 144, 255, 0.08) 100%);
+  animation: float 8s ease-in-out infinite;
+}
+
+.shape-1 {
+  width: 200px;
+  height: 200px;
+  top: 10%;
+  right: 10%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 150px;
+  height: 150px;
+  bottom: 20%;
+  right: 20%;
+  animation-delay: -4s;
+}
+
+.shape-3 {
+  width: 100px;
+  height: 100px;
+  bottom: 20%;
+  left: 20%;
+  animation-delay: -14s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(180deg);
+  }
+}
+
+.container {
+  position: relative;
+  z-index: 2;
 }
 
 .page-header {
@@ -407,6 +592,7 @@ onMounted(() => {
   padding: 20px 30px 0;
   border-bottom: 1px solid #f0f0f0;
 }
+
 
 .orders-list {
   padding: 20px 30px;

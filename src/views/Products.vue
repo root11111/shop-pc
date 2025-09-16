@@ -636,7 +636,7 @@ watch(() => filters, () => {
 .products-page {
   padding: 20px 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 30%, #d1e7ff 70%, #b8daff 100%);
   position: relative;
   overflow: hidden;
 }
@@ -657,9 +657,9 @@ watch(() => filters, () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 20% 80%, rgba(108, 117, 125, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, rgba(73, 80, 87, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 40% 40%, rgba(52, 58, 64, 0.03) 0%, transparent 50%);
+  background: radial-gradient(circle at 20% 80%, rgba(64, 158, 255, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(24, 144, 255, 0.06) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(135, 208, 104, 0.04) 0%, transparent 50%);
   animation: gradientShift 20s ease-in-out infinite;
 }
 
@@ -675,7 +675,7 @@ watch(() => filters, () => {
 .floating-circle {
   position: absolute;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(64, 158, 255, 0.1);
   backdrop-filter: blur(10px);
   animation: float 25s ease-in-out infinite;
 }
@@ -707,7 +707,7 @@ watch(() => filters, () => {
 .bg-shape {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(24, 144, 255, 0.08) 100%);
   animation: float 8s ease-in-out infinite;
 }
 

@@ -84,9 +84,23 @@ const settingsStore = useSettingsStore()
 
 <style scoped>
 .footer {
-  background: #2c3e50;
+  background: linear-gradient(135deg, #2d3748 0%, #4a5568 50%, #718096 100%);
   color: white;
   margin-top: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 80%, rgba(45, 55, 72, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(74, 85, 104, 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .footer-content {
@@ -94,12 +108,15 @@ const settingsStore = useSettingsStore()
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 40px;
   padding: 40px 0;
+  position: relative;
+  z-index: 2;
 }
 
 .footer-section h3 {
-  color: #ecf0f1;
+  color: #ffffff;
   margin-bottom: 20px;
   font-size: 18px;
+  font-weight: 600;
 }
 
 .footer-section ul {
@@ -111,13 +128,13 @@ const settingsStore = useSettingsStore()
 }
 
 .footer-section ul li a {
-  color: #bdc3c7;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: color 0.3s;
 }
 
 .footer-section ul li a:hover {
-  color: #3498db;
+  color: #ffffff;
 }
 
 .social-links {
@@ -130,13 +147,13 @@ const settingsStore = useSettingsStore()
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #bdc3c7;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: color 0.3s;
 }
 
 .social-link:hover {
-  color: #3498db;
+  color: #ffffff;
 }
 
 .social-link span {
@@ -145,23 +162,25 @@ const settingsStore = useSettingsStore()
 }
 
 .contact-info p {
-  color: #bdc3c7;
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 5px;
   font-size: 14px;
 }
 
 .footer-bottom {
-  border-top: 1px solid #34495e;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   padding: 20px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .copyright p {
-  color: #bdc3c7;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
   margin-bottom: 5px;
 }
@@ -172,14 +191,14 @@ const settingsStore = useSettingsStore()
 }
 
 .footer-links a {
-  color: #bdc3c7;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   font-size: 14px;
   transition: color 0.3s;
 }
 
 .footer-links a:hover {
-  color: #3498db;
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {
