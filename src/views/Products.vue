@@ -24,7 +24,7 @@
                 <span class="title-icon">
                   <el-icon><Grid /></el-icon>
                 </span>
-                <span class="title-text">商品列表</span>
+                <span class="title-text">{{ $t('products.title') }}</span>
                 <span class="title-decoration"></span>
               </h1>
             </div>
@@ -34,7 +34,7 @@
               </div>
               <div class="count-text">
                 <span class="count-number">{{ pagination.total }}</span>
-                <span class="count-label">件商品</span>
+                  <span class="count-label">{{ $t('products.productCount') }}</span>
               </div>
             </div>
           </div>
@@ -45,15 +45,15 @@
           <div class="filter-group">
             <label class="filter-label">
               <el-icon><Grid /></el-icon>
-              商品分类
+              {{ $t('products.categoryFilter') }}
             </label>
             <el-select 
               v-model="filters.category" 
-              placeholder="选择分类" 
+              :placeholder="$t('products.selectCategory')" 
               @change="handleFilterChange"
               class="filter-select"
             >
-              <el-option label="全部分类" value="" />
+              <el-option :label="$t('products.allCategories')" value="" />
               <el-option 
                 v-for="category in categories" 
                 :key="category.id" 

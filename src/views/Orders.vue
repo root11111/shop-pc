@@ -15,21 +15,21 @@
     
     <div class="container">
       <div class="page-header">
-        <h1>我的订单</h1>
-        <p>查看和管理您的订单</p>
+        <h1>{{ $t('orders.title') }}</h1>
+        <p>{{ $t('orders.subtitle') }}</p>
       </div>
 
       <div class="orders-content">
         <!-- 订单状态筛选 -->
         <div class="order-filters">
           <el-tabs v-model="activeStatus" @tab-change="handleStatusChange">
-            <el-tab-pane :label="`全部(${orderStats.all})`" name="all" />
-            <el-tab-pane :label="`待付款(${orderStats.pending})`" name="pending" />
-            <el-tab-pane :label="`待配货(${orderStats.picking})`" name="picking" />
-            <el-tab-pane :label="`待发货(${orderStats.shipping})`" name="shipping" />
-            <el-tab-pane :label="`待收货(${orderStats.shipped})`" name="shipped" />
-            <el-tab-pane :label="`已完成(${orderStats.completed})`" name="completed" />
-            <el-tab-pane :label="`已取消(${orderStats.cancelled})`" name="cancelled" />
+            <el-tab-pane :label="`${$t('orders.statusAll')}(${orderStats.all})`" name="all" />
+            <el-tab-pane :label="`${$t('orders.statusPending')}(${orderStats.pending})`" name="pending" />
+            <el-tab-pane :label="`${$t('orders.statusPicking')}(${orderStats.picking})`" name="picking" />
+            <el-tab-pane :label="`${$t('orders.statusShipping')}(${orderStats.shipping})`" name="shipping" />
+            <el-tab-pane :label="`${$t('orders.statusShipped')}(${orderStats.shipped})`" name="shipped" />
+            <el-tab-pane :label="`${$t('orders.statusCompleted')}(${orderStats.completed})`" name="completed" />
+            <el-tab-pane :label="`${$t('orders.statusCancelled')}(${orderStats.cancelled})`" name="cancelled" />
           </el-tabs>
         </div>
 
@@ -42,7 +42,7 @@
           >
             <div class="order-header">
               <div class="order-info">
-                <span class="order-number">订单号：{{ order.order_number || order.orderNumber }}</span>
+                <span class="order-number">{{ $t('orders.orderNumber') }}：{{ order.order_number || order.orderNumber }}</span>
                 <span class="order-date">{{ order.order_time || order.createTime }}</span>
               </div>
               <div class="order-status">
@@ -84,8 +84,8 @@
                   </div>
                 </div>
                 <div class="item-info">
-                  <h3 class="item-name">{{ order.product_name || order.productName || '商品名称' }}</h3>
-                  <p class="item-spec">商品详情加载中...</p>
+                  <h3 class="item-name">{{ order.product_name || order.productName || $t('orders.productName') }}</h3>
+                  <p class="item-spec">{{ $t('orders.productDetails') }}</p>
                 </div>
                 <div class="item-price">
                   <span class="price">¥0.00</span>
@@ -96,7 +96,7 @@
 
             <div class="order-footer">
               <div class="order-total">
-                共{{ order.items ? order.items.length : 0 }}件商品，实付：
+                {{ order.items ? order.items.length : 0 }}{{ $t('orders.itemsCount') }}，{{ $t('orders.totalLabel') }}
                 <span class="total-amount">¥{{ order.orderPaymentAmount || order.totalAmount || 0 }}</span>
               </div>
               <div class="order-actions">
@@ -105,32 +105,32 @@
                           type="primary" 
                           @click="payOrder(order)"
                         >
-                          立即付款
+                          {{ $t('orders.payNow') }}
                         </el-button>
                         <el-button 
                           v-if="getOrderStatus(order) === 'picking'"
                           @click="cancelOrderAction(order)"
                         >
-                          取消订单
+                          {{ $t('orders.cancelOrder') }}
                         </el-button>
                         <el-button 
                           v-if="getOrderStatus(order) === 'shipped'"
                           type="success" 
                           @click="confirmReceipt(order)"
                         >
-                          确认收货
+                          {{ $t('orders.confirmReceipt') }}
                         </el-button>
                 <el-button 
                   v-if="getOrderStatus(order) === 'completed'"
                   @click="viewOrderDetail(order)"
                 >
-                  查看详情
+                  {{ $t('orders.viewDetails') }}
                 </el-button>
                 <el-button 
                   v-if="getOrderStatus(order) === 'completed'"
                   @click="buyAgain(order)"
                 >
-                  再次购买
+                  {{ $t('orders.buyAgain') }}
                 </el-button>
               </div>
             </div>
@@ -142,10 +142,10 @@
           <div class="empty-icon">
             <el-icon size="80"><Document /></el-icon>
           </div>
-          <h3>暂无订单</h3>
-          <p>快去挑选心仪的商品吧</p>
+          <h3>{{ $t('orders.noOrders') }}</h3>
+          <p>{{ $t('orders.goShopping') }}</p>
           <el-button type="primary" @click="goToProducts">
-            去购物
+            {{ $t('orders.goShopping') }}
           </el-button>
         </div>
       </div>
@@ -159,8 +159,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Picture } from '@element-plus/icons-vue'
 import { getOrderList, getOrderDetail, cancelOrder } from '@/api/order'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const loading = ref(false)
 const activeStatus = ref('all')
@@ -221,14 +223,14 @@ const getStatusType = (status) => {
 
 const getStatusText = (status) => {
   const statusMap = {
-    pending: '待付款',
-    picking: '待配货',
-    shipping: '待发货',
-    shipped: '待收货',
-    completed: '已完成',
-    cancelled: '已取消'
+    pending: t('orders.statusPending'),
+    picking: t('orders.statusPicking'),
+    shipping: t('orders.statusShipping'),
+    shipped: t('orders.statusShipped'),
+    completed: t('orders.statusCompleted'),
+    cancelled: t('orders.statusCancelled')
   }
-  return statusMap[status] || '未知状态'
+  return statusMap[status] || t('orders.unknownStatus')
 }
 
 const handleStatusChange = (status) => {
@@ -238,11 +240,11 @@ const handleStatusChange = (status) => {
 const payOrder = async (order) => {
   try {
     await ElMessageBox.confirm(
-      `确认支付订单 ${order.orderNumber} 吗？`,
-      '确认支付',
+      `${t('orders.payConfirm')} ${order.orderNumber} 吗？`,
+      t('orders.payConfirm'),
       {
-        confirmButtonText: '确认支付',
-        cancelButtonText: '取消',
+        confirmButtonText: t('orders.payConfirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
       }
     )
@@ -252,7 +254,7 @@ const payOrder = async (order) => {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     order.status = 'paid'
-    ElMessage.success('支付成功！')
+    ElMessage.success(t('orders.paySuccess'))
   } catch {
     // 用户取消支付
   } finally {
@@ -265,21 +267,21 @@ const cancelOrderAction = async (order) => {
     // 检查订单状态，只有待配货状态才能取消
     const status = getOrderStatus(order)
     if (status !== 'picking') {
-      ElMessage.warning('只有待配货状态的订单才能取消')
+      ElMessage.warning(t('orders.onlyPickingCanCancel'))
       return
     }
 
     const { value: reason } = await ElMessageBox.prompt(
-      '请输入取消订单的原因',
-      '取消订单',
+      t('orders.cancelReason'),
+      t('orders.cancelOrder'),
       {
-        confirmButtonText: '确认取消',
-        cancelButtonText: '不取消',
+        confirmButtonText: t('orders.cancelConfirm'),
+        cancelButtonText: t('orders.cancelCancel'),
         type: 'warning',
-        inputPlaceholder: '请输入取消原因',
+        inputPlaceholder: t('orders.cancelPlaceholder'),
         inputValidator: (value) => {
           if (!value || value.trim().length === 0) {
-            return '请输入取消原因'
+            return t('orders.cancelRequired')
           }
           return true
         }
@@ -295,16 +297,16 @@ const cancelOrderAction = async (order) => {
     })
     
     if (response && response.code === 0) {
-      ElMessage.success('订单取消成功')
+      ElMessage.success(t('orders.cancelSuccess'))
       // 重新加载订单列表
       await loadOrders()
     } else {
-      ElMessage.error(response?.msg || '取消订单失败')
+      ElMessage.error(response?.msg || t('orders.cancelFailed'))
     }
   } catch (error) {
     if (error !== 'cancel') {
       console.error('取消订单失败:', error)
-      ElMessage.error('取消订单失败')
+      ElMessage.error(t('orders.cancelFailed'))
     }
   } finally {
     loading.value = false
@@ -314,28 +316,28 @@ const cancelOrderAction = async (order) => {
 const confirmReceipt = async (order) => {
   try {
     await ElMessageBox.confirm(
-      `确认收货订单 ${order.orderNumber} 吗？`,
-      '确认收货',
+      `${t('orders.receiptConfirm')} ${order.orderNumber} 吗？`,
+      t('orders.receiptConfirm'),
       {
-        confirmButtonText: '确认收货',
-        cancelButtonText: '取消',
+        confirmButtonText: t('orders.receiptConfirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
       }
     )
     
     order.status = 'completed'
-    ElMessage.success('确认收货成功！')
+    ElMessage.success(t('orders.receiptSuccess'))
   } catch {
     // 用户取消操作
   }
 }
 
 const viewOrderDetail = (order) => {
-  ElMessage.info('查看订单详情功能待开发')
+  ElMessage.info(t('orders.viewDetails') + '功能待开发')
 }
 
 const buyAgain = (order) => {
-  ElMessage.info('再次购买功能待开发')
+  ElMessage.info(t('orders.buyAgain') + '功能待开发')
 }
 
 const goToProducts = () => {

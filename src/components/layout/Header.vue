@@ -14,7 +14,7 @@
         <div class="search-box">
         <el-input
           v-model="searchKeyword"
-          :placeholder="$t('common.search') + '商品名称或商品ID...'"
+          :placeholder="$t('common.search') + $t('search.searchTip').replace('💡 ', '')"
           class="search-input"
           @keyup.enter="handleSearch"
           @clear="handleClear"
@@ -29,7 +29,7 @@
           </el-button>
           <el-button type="default" @click="goToProducts" class="products-btn">
             <el-icon><Grid /></el-icon>
-            商品列表
+            {{ $t('products.title') }}
           </el-button>
         </div>
 
@@ -54,7 +54,7 @@
                   {{ userInfo.nickname?.charAt(0) || 'U' }}
                 </el-avatar>
                 <div class="user-info">
-                  <span class="user-name">{{ userInfo.nickname || '用户' }}</span>
+                  <span class="user-name">{{ userInfo.nickname || $t('common.user') }}</span>
                   <el-tag v-if="userLevelName" :type="getUserLevelTagType(userInfo)" size="small" class="user-level-tag">
                     {{ userLevelName }}
                   </el-tag>

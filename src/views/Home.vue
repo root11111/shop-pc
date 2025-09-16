@@ -22,28 +22,22 @@
       <div class="container">
         <div class="category-header">
           <h2 class="section-title">商品分类</h2>
-          <div class="category-indicators">
-            <div class="scroll-indicator left" @click="scrollCategories('left')" v-show="canScrollLeft">
-              <el-icon><ArrowLeft /></el-icon>
-            </div>
-            <div class="scroll-indicator right" @click="scrollCategories('right')" v-show="canScrollRight">
-              <el-icon><ArrowRight /></el-icon>
-            </div>
-          </div>
         </div>
         <div class="category-container">
-          <div class="category-scroll" ref="categoryScroll" @scroll="handleCategoryScroll">
+          <div class="puzzle-grid" ref="categoryScroll">
             <div 
-              v-for="category in categories" 
+              v-for="(category, index) in categories" 
               :key="category.id"
-              class="category-item"
+              :class="['puzzle-piece', `puzzle-${index % 8 + 1}`]"
               @click="goToCategory(category.id)"
             >
-              <div class="category-icon">
-                <img :src="category.icon" :alt="category.name" />
+              <div class="puzzle-content">
+                <div class="puzzle-icon">
+                  <img :src="category.icon" :alt="category.name" />
+                </div>
+                <span class="puzzle-name">{{ category.name }}</span>
               </div>
-              <span class="category-name">{{ category.name }}</span>
-              <div class="category-glow"></div>
+              <div class="puzzle-glow"></div>
             </div>
           </div>
         </div>
@@ -159,10 +153,8 @@ const currentPage = ref(1)
 const pageSize = ref(12)
 const total = ref(0)
 
-// 分类滑动相关
+// 分类引用
 const categoryScroll = ref(null)
-const canScrollLeft = ref(false)
-const canScrollRight = ref(false)
 
 // 获取商品分类
 const fetchCategories = async () => {
@@ -376,42 +368,6 @@ const goToCategory = (categoryId) => {
   })
 }
 
-// 分类滑动处理
-const scrollCategories = (direction) => {
-  if (!categoryScroll.value) return
-  
-  const scrollAmount = 200
-  const currentScroll = categoryScroll.value.scrollLeft
-  
-  if (direction === 'left') {
-    categoryScroll.value.scrollTo({
-      left: currentScroll - scrollAmount,
-      behavior: 'smooth'
-    })
-  } else {
-    categoryScroll.value.scrollTo({
-      left: currentScroll + scrollAmount,
-      behavior: 'smooth'
-    })
-  }
-}
-
-// 处理分类滚动事件
-const handleCategoryScroll = () => {
-  if (!categoryScroll.value) return
-  
-  const { scrollLeft, scrollWidth, clientWidth } = categoryScroll.value
-  
-  canScrollLeft.value = scrollLeft > 0
-  canScrollRight.value = scrollLeft < scrollWidth - clientWidth - 1
-}
-
-// 检查滚动状态
-const checkScrollStatus = () => {
-  nextTick(() => {
-    handleCategoryScroll()
-  })
-}
 
 onMounted(async () => {
   try {
@@ -419,8 +375,6 @@ onMounted(async () => {
       fetchCategories(),
       fetchProducts()
     ])
-    // 检查分类滚动状态
-    checkScrollStatus()
   } catch (error) {
     // 错误已经在各自的函数中处理了
     console.log('首页数据加载失败:', error)
@@ -571,74 +525,65 @@ onMounted(async () => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.category-scroll {
-  display: flex;
-  gap: 24px;
-  overflow-x: auto;
+.puzzle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
   padding: 10px 0;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+  max-height: 400px;
+  overflow-y: auto;
   position: relative;
 }
 
-.category-scroll::-webkit-scrollbar {
-  height: 8px;
+.puzzle-grid::-webkit-scrollbar {
+  width: 8px;
 }
 
-.category-scroll::-webkit-scrollbar-track {
+.puzzle-grid::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
 }
 
-.category-scroll::-webkit-scrollbar-thumb {
+.puzzle-grid::-webkit-scrollbar-thumb {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 4px;
   transition: all 0.3s ease;
 }
 
-.category-scroll::-webkit-scrollbar-thumb:hover {
+.puzzle-grid::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
   transform: scaleY(1.2);
 }
 
-.category-item {
-  flex: 0 0 auto;
+.puzzle-piece {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transform: translateY(50px);
+}
+
+.puzzle-content {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 18px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  min-width: 130px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
 }
 
-.category-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.puzzle-piece:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
-.category-item:hover {
-  transform: translateY(-12px) scale(1.08);
-  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.5);
-}
-
-.category-item:hover::before {
-  opacity: 1;
-}
-
-.category-glow {
+.puzzle-glow {
   position: absolute;
   top: -50%;
   left: -50%;
@@ -650,41 +595,70 @@ onMounted(async () => {
   pointer-events: none;
 }
 
-.category-item:hover .category-glow {
+.puzzle-piece:hover .puzzle-glow {
   opacity: 1;
 }
 
-.category-item:nth-child(2n) {
+/* 拼图形状定义 */
+.puzzle-1 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 20px 20px 20px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.puzzle-2 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 20px 5px 20px 20px;
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-.category-item:nth-child(3n) {
+.puzzle-3 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 5px 20px 20px 5px;
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
-.category-item:nth-child(4n) {
+.puzzle-4 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 20px 20px 5px 20px;
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
-.category-item:nth-child(5n) {
+.puzzle-5 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 20px 20px 20px 5px;
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
-.category-item:nth-child(6n) {
+.puzzle-6 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 5px 5px 20px 20px;
   background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
 }
 
-.category-item:nth-child(7n) {
+.puzzle-7 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 20px 5px 5px 20px;
   background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
 }
 
-.category-item:nth-child(8n) {
+.puzzle-8 {
+  grid-column: span 1;
+  grid-row: span 1;
+  border-radius: 5px 20px 5px 5px;
   background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
 }
 
-.category-icon {
-  width: 60px;
-  height: 60px;
+.puzzle-icon {
+  width: 50px;
+  height: 50px;
   margin-bottom: 12px;
   border-radius: 50%;
   overflow: hidden;
@@ -694,22 +668,34 @@ onMounted(async () => {
   justify-content: center;
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
 }
 
-.category-icon img {
-  width: 40px;
-  height: 40px;
+.puzzle-piece:hover .puzzle-icon {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.puzzle-icon img {
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   filter: brightness(0) invert(1);
 }
 
-.category-name {
+.puzzle-name {
   font-size: 0.9rem;
   color: white;
   font-weight: 600;
   text-align: center;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   line-height: 1.2;
+  transition: all 0.3s ease;
+}
+
+.puzzle-piece:hover .puzzle-name {
+  transform: translateY(-2px);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 .products-grid {
@@ -903,4 +889,47 @@ onMounted(async () => {
     font-size: 0.75rem;
   }
 }
+
+/* 跳动动画定义 */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.05);
+  }
+  70% {
+    transform: translateY(5px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 持续跳动动画 */
+@keyframes continuousBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* 为拼图块添加持续跳动效果 */
+.puzzle-piece {
+  animation: bounceIn 0.6s ease-out forwards, continuousBounce 3s ease-in-out infinite;
+}
+
+.puzzle-1 { animation-delay: 0.1s, 0.1s; }
+.puzzle-2 { animation-delay: 0.2s, 0.2s; }
+.puzzle-3 { animation-delay: 0.3s, 0.3s; }
+.puzzle-4 { animation-delay: 0.4s, 0.4s; }
+.puzzle-5 { animation-delay: 0.5s, 0.5s; }
+.puzzle-6 { animation-delay: 0.6s, 0.6s; }
+.puzzle-7 { animation-delay: 0.7s, 0.7s; }
+.puzzle-8 { animation-delay: 0.8s, 0.8s; }
 </style>
